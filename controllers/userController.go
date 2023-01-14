@@ -17,3 +17,11 @@ func SignUp(c *gin.Context) {
 func Login(c *gin.Context) {
 	c.JSON(200, "hello")
 }
+
+func HashPassword(password string) string{
+	return password
+}
+
+func VerifyPassword(hashedPassword string, password string) (bool, string){
+	return password==hashedPassword,"hello"
+}
