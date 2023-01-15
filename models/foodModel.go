@@ -13,6 +13,6 @@ type Food struct {
 	FoodImage *string            `json:"food_image" validate:"required"`
 	CreatedAt time.Time          `json:"created_at"`
 	UpdatedAt time.Time          `json:"updated_at"`
-	FoodId    *string            `json:"food_id" validate:"required"`
+	FoodId    string             `json:"food_id" validate:"required"`
 	MenuId    *string            `json:"menu_id" validate:"required"`
 }
