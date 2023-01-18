@@ -3,28 +3,25 @@ package main
 import (
 	"os"
 
-	"github.com/RahulMj21/mongo-restaurant-management/database"
-	"github.com/RahulMj21/mongo-restaurant-management/middlewares"
 	"github.com/RahulMj21/mongo-restaurant-management/routes"
 
 	"github.com/gin-gonic/gin"
-	"go.mongodb.org/mongo-driver/mongo"
 )
 
-var foodCollection *mongo.Collection = database.OpenCollection(database.Client, "food")
+// var foodCollection *mongo.Collection = database.OpenCollection(database.Client, "food")
 
-func main(){
+func main() {
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8000"
 	}
 
-	app:= gin.New()
+	app := gin.New()
 
 	app.Use(gin.Logger())
 
 	routes.UserRoutes(app)
-	app.Use(middlewares.Authentication())
+	// app.Use(middlewares.Authentication())
 
 	routes.FoodRoutes(app)
 	routes.InvoiceRoutes(app)

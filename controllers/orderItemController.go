@@ -6,7 +6,7 @@ import (
 )
 
 func GetOrderItems(c *gin.Context) {
-	
+
 }
 
 func GetOrderItem(c *gin.Context) {
@@ -17,8 +17,8 @@ func GetOrderItemsByOrderId(c *gin.Context) {
 
 }
 
-func ItemsByOrderId(id string) (OrderItems []primitive.M, err error){
-
+func ItemsByOrderId(id string) (OrderItems []primitive.M, err error) {
+	return
 }
 
 func CreateOrderItem(c *gin.Context) {
