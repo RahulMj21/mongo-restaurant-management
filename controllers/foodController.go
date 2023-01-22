@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"context"
+	"strconv"
 	"time"
 
 	"github.com/RahulMj21/mongo-restaurant-management/database"
@@ -18,7 +19,49 @@ var foodCollection *mongo.Collection = database.OpenCollection(database.Client, 
 var validate = validator.New()
 
 func GetFoods(c *gin.Context) {
+	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Second)
+	cancel()
 
+	resultPerPage, err := strconv.Atoi(c.Query("resultPerPage"))
+	if err != nil || resultPerPage < 1 {
+		resultPerPage = 10
+	}
+
+	page, err := strconv.Atoi(c.Query("page"))
+	if err != nil || page < 1 {
+		page = 1
+	}
+
+	startIndex, err := strconv.Atoi(c.Query("startIndex"))
+	if err != nil || startIndex < 0 {
+		startIndex = (page - 1) * resultPerPage
+	}
+
+	matchStage := bson.D{{Key: "$match", Value: bson.D{{}}}}
+	groupStage := bson.D{{Key: "$group", Value: bson.D{
+		{Key: "id", Value: bson.D{{Key: "_id", Value: "null"}}},
+		{Key: "total_count", Value: bson.D{{Key: "$sum", Value: "1"}}},
+		{Key: "data", Value: bson.D{{Key: "$push", Value: "$$ROOT"}}},
+	}}}
+	projectState := bson.D{{Key: "$project", Value: bson.D{
+		{Key: "_id", Value: 0},
+		{Key: "total_count", Value: 1},
+		{Key: "food_items", Value: bson.D{{Key: "$slice", Value: []interface{}{"$data", startIndex, resultPerPage}}}},
+	}}}
+
+	result, err := foodCollection.Aggregate(ctx, mongo.Pipeline{matchStage, groupStage, projectState})
+	if err != nil {
+		c.JSON(500, gin.H{"status": "fail", "message": err.Error()})
+		return
+	}
+	foods := []primitive.D{}
+
+	if err = result.All(ctx, &foods); err != nil {
+		c.JSON(500, gin.H{"status": "fail", "message": err.Error()})
+		return
+	}
+
+	c.JSON(200, gin.H{"status": "success", "data": foods})
 }
 
 func GetFood(c *gin.Context) {
@@ -35,6 +78,7 @@ func GetFood(c *gin.Context) {
 
 func CreateFood(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Second)
+	defer cancel()
 	menu := models.Menu{}
 	food := models.Food{}
 
