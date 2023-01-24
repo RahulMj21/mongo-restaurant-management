@@ -181,7 +181,7 @@ func UpdateOrder(c *gin.Context) {
 
 func OrderItemOrderCreator(order models.Order) string {
 	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Second)
-	cancel()
+	defer cancel()
 
 	order.CreatedAt, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
 	order.UpdatedAt, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))

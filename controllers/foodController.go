@@ -22,7 +22,7 @@ var validate = validator.New()
 
 func GetFoods(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Second)
-	cancel()
+	defer cancel()
 
 	resultPerPage, err := strconv.Atoi(c.Query("resultPerPage"))
 	if err != nil || resultPerPage < 1 {
@@ -41,8 +41,8 @@ func GetFoods(c *gin.Context) {
 
 	matchStage := bson.D{{Key: "$match", Value: bson.D{{}}}}
 	groupStage := bson.D{{Key: "$group", Value: bson.D{
-		{Key: "id", Value: bson.D{{Key: "_id", Value: "null"}}},
-		{Key: "total_count", Value: bson.D{{Key: "$sum", Value: "1"}}},
+		{Key: "_id", Value: bson.D{{Key: "_id", Value: "null"}}},
+		{Key: "total_count", Value: bson.D{{Key: "$sum", Value: 1}}},
 		{Key: "data", Value: bson.D{{Key: "$push", Value: "$$ROOT"}}},
 	}}}
 	projectState := bson.D{{Key: "$project", Value: bson.D{
