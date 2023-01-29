@@ -5,9 +5,9 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func TableRoutes(app *gin.Engine) {
-	app.GET("/tables", controllers.GetTables)
-	app.GET("/tables/:id", controllers.GetTable)
-	app.POST("/tables", controllers.CreateTable)
-	app.PATCH("/tables/:id", controllers.UpdateTable)
+func TableRoutes(api *gin.RouterGroup) {
+	api.GET("/tables", controllers.GetTables)
+	api.GET("/tables/:id", controllers.GetTable)
+	api.POST("/tables", controllers.CreateTable)
+	api.PATCH("/tables/:id", controllers.UpdateTable)
 }

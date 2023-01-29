@@ -5,10 +5,10 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func InvoiceRoutes(app *gin.Engine) {
-	app.GET("/invoices", controllers.GetInvoices)
-	app.GET("/invoices/:id", controllers.GetInvoice)
-	app.POST("/invoices", controllers.CreateInvoice)
-	app.PATCH("/invoices/:id", controllers.UpdateInvoice)
+func InvoiceRoutes(api *gin.RouterGroup) {
+	api.GET("/invoices", controllers.GetInvoices)
+	api.GET("/invoices/:id", controllers.GetInvoice)
+	api.POST("/invoices", controllers.CreateInvoice)
+	api.PATCH("/invoices/:id", controllers.UpdateInvoice)
 
 }

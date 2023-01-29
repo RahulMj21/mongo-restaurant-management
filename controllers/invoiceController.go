@@ -38,7 +38,7 @@ func GetInvoices(c *gin.Context) {
 		return
 	}
 
-	var invoices bson.M
+	var invoices []primitive.M
 
 	if err := result.All(ctx, &invoices); err != nil {
 		c.JSON(500, gin.H{
@@ -102,8 +102,58 @@ func GetInvoice(c *gin.Context) {
 }
 
 func CreateInvoice(c *gin.Context) {
-	_, cancel := context.WithTimeout(context.Background(), 100*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Second)
 	defer cancel()
+
+	order := models.Order{}
+	invoice := models.Invoice{}
+
+	if err := c.BindJSON(&invoice); err != nil {
+		c.JSON(400, gin.H{"status": "fail", "message": err.Error()})
+		return
+	}
+
+	if err := ordersCollection.FindOne(ctx, bson.D{{Key: "order_id", Value: invoice.OrderId}}).Decode(&order); err != nil {
+		c.JSON(404, gin.H{
+			"status":  "fail",
+			"message": err.Error(),
+		})
+		return
+	}
+
+	if err := validate.Struct(invoice); err != nil {
+		c.JSON(400, gin.H{
+			"status":  "fail",
+			"message": err.Error(),
+		})
+		return
+	}
+
+	invoice.ID = primitive.NewObjectID()
+	invoice.InvoiceId = invoice.ID.Hex()
+	invoice.CreatedAt, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
+	invoice.UpdatedAt, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
+	invoice.PaymentDueDate, _ = time.Parse(time.RFC3339, time.Now().AddDate(0, 0, 1).Format(time.RFC3339))
+
+	status := "PENDING"
+	if invoice.PaymentStatus == nil {
+		invoice.PaymentStatus = &status
+	}
+
+	insertedItem, err := invoiceCollection.InsertOne(ctx, invoice)
+	if err != nil {
+		c.JSON(500, gin.H{"status": "fail", "message": err.Error()})
+		return
+	}
+
+	newInvoice := models.Invoice{}
+
+	if err := invoiceCollection.FindOne(ctx, bson.M{"_id": insertedItem.InsertedID}).Decode(&newInvoice); err != nil {
+		c.JSON(500, gin.H{"status": "fail", "message": err.Error()})
+		return
+	}
+
+	c.JSON(201, gin.H{"status": "success", "data": newInvoice})
 }
 
 func UpdateInvoice(c *gin.Context) {

@@ -5,9 +5,9 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func UserRoutes(app *gin.Engine) {
-	app.GET("/users", controllers.GetUsers)
-	app.GET("/users/:id", controllers.GetUser)
-	app.GET("/signup", controllers.SignUp)
-	app.GET("/login", controllers.Login)
+func UserRoutes(api *gin.RouterGroup) {
+	api.GET("/users", controllers.GetUsers)
+	api.GET("/users/:id", controllers.GetUser)
+	api.GET("/signup", controllers.SignUp)
+	api.GET("/login", controllers.Login)
 }

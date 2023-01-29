@@ -17,18 +17,18 @@ func main() {
 	}
 
 	app := gin.New()
+	api := app.Group("/api/v1")
 
-	app.Use(gin.Logger())
+	api.Use(gin.Logger())
+	routes.UserRoutes(api)
+	// api.Use(middlewares.Authentication())
 
-	routes.UserRoutes(app)
-	// app.Use(middlewares.Authentication())
-
-	routes.FoodRoutes(app)
-	routes.InvoiceRoutes(app)
-	routes.MenuRoutes(app)
-	routes.OrderItemRoutes(app)
-	routes.OrderRoutes(app)
-	routes.TableRoutes(app)
+	routes.FoodRoutes(api)
+	routes.InvoiceRoutes(api)
+	routes.MenuRoutes(api)
+	routes.OrderItemRoutes(api)
+	routes.OrderRoutes(api)
+	routes.TableRoutes(api)
 
 	app.Run(":" + port)
 }

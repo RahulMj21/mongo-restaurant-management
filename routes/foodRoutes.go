@@ -5,9 +5,9 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func FoodRoutes(app *gin.Engine) {
-	app.GET("/foods", controllers.GetFoods)
-	app.GET("/foods/:id", controllers.GetFood)
-	app.POST("/foods", controllers.CreateFood)
-	app.PATCH("/foods/:id", controllers.UpdateFood)
+func FoodRoutes(api *gin.RouterGroup) {
+	api.GET("/foods", controllers.GetFoods)
+	api.GET("/foods/:id", controllers.GetFood)
+	api.POST("/foods", controllers.CreateFood)
+	api.PATCH("/foods/:id", controllers.UpdateFood)
 }
