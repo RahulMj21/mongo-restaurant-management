@@ -78,6 +78,7 @@ func GetInvoice(c *gin.Context) {
 			"status":  "fail",
 			"message": err.Error(),
 		})
+		return
 	}
 
 	invoiceView.Order_id = invoice.OrderId
