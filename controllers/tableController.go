@@ -123,6 +123,7 @@ func UpdateTable(c *gin.Context) {
 	result, err := tableCollection.UpdateOne(ctx, filter, bson.D{{Key: "$set", Value: tableObj}}, &opt)
 	if err != nil {
 		c.JSON(500, gin.H{"status": "fail", "message": err.Error()})
+		return
 	}
 
 	c.JSON(200, gin.H{"status": "success", "data": result})
