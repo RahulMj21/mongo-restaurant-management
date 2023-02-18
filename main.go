@@ -3,12 +3,11 @@ package main
 import (
 	"os"
 
+	"github.com/RahulMj21/mongo-restaurant-management/middlewares"
 	"github.com/RahulMj21/mongo-restaurant-management/routes"
 
 	"github.com/gin-gonic/gin"
 )
-
-// var foodCollection *mongo.Collection = database.OpenCollection(database.Client, "food")
 
 func main() {
 	port := os.Getenv("PORT")
@@ -20,8 +19,9 @@ func main() {
 	api := app.Group("/api/v1")
 
 	api.Use(gin.Logger())
+
 	routes.UserRoutes(api)
-	// api.Use(middlewares.Authentication())
+	api.Use(middlewares.Authentication)
 
 	routes.FoodRoutes(api)
 	routes.InvoiceRoutes(api)
