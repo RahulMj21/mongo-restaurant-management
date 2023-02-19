@@ -1,16 +1,19 @@
 package controllers
 
 import (
+	"log"
 	"strconv"
 	"time"
 
 	"github.com/RahulMj21/mongo-restaurant-management/database"
+	"github.com/RahulMj21/mongo-restaurant-management/helpers"
 	"github.com/RahulMj21/mongo-restaurant-management/models"
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"golang.org/x/crypto/bcrypt"
 	"golang.org/x/net/context"
 )
 
@@ -100,17 +103,130 @@ func GetUser(c *gin.Context) {
 }
 
 func SignUp(c *gin.Context) {
-	c.JSON(200, "hello")
+	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Second)
+	defer cancel()
+
+	user := models.User{}
+	if err := c.BindJSON(&user); err != nil {
+		c.JSON(400, gin.H{"status": "fail", "message": err.Error()})
+		return
+	}
+
+	validationErr := validate.Struct(user)
+	if validationErr != nil {
+		c.JSON(400, gin.H{"status": "fail", "message": validationErr.Error()})
+		return
+	}
+
+	count, err := userCollection.CountDocuments(ctx, bson.D{{Key: "email", Value: user.Email}})
+	if err != nil {
+		c.JSON(500, gin.H{"status": "fail", "message": err.Error()})
+		return
+	}
+	if count > 0 {
+		c.JSON(500, gin.H{"status": "fail", "message": "email already taken"})
+		return
+	}
+
+	password := HashPassword(*user.Password)
+	user.Password = &password
+	user.CreatedAt, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
+	user.UpdatedAt, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
+	user.ID = primitive.NewObjectID()
+	user.UserId = user.ID.Hex()
+
+	accessToken, refreshToken, _ := helpers.GenerateAllTokens(*user.Email, *user.FirstName, *user.LastName, user.UserId)
+
+	user.AccessToken = &accessToken
+	user.RefreshToken = &refreshToken
+
+	insertedItem, err := userCollection.InsertOne(ctx, user)
+	if err != nil || insertedItem.InsertedID == nil {
+		c.JSON(500, gin.H{"status": "fail", "message": "user creation failed"})
+		return
+	}
+
+	newUser := models.User{
+		ID:           user.ID,
+		UserId:       user.UserId,
+		Email:        user.Email,
+		FirstName:    user.FirstName,
+		LastName:     user.LastName,
+		AccessToken:  user.AccessToken,
+		RefreshToken: user.RefreshToken,
+		Avatar:       user.Avatar,
+		CreatedAt:    user.CreatedAt,
+		UpdatedAt:    user.UpdatedAt,
+	}
+
+	c.JSON(201, gin.H{"status": "success", "data": newUser})
+}
+
+type LoginBody struct {
+	Email    string `json:"email" validate:"required"`
+	Password string `json:"password" validate:"required"`
 }
 
 func Login(c *gin.Context) {
-	c.JSON(200, "hello")
+	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Second)
+	defer cancel()
+
+	body := LoginBody{}
+
+	if err := c.BindJSON(&body); err != nil {
+		c.JSON(400, gin.H{"status": "fail", "message": err.Error()})
+		return
+	}
+	validationErr := validate.Struct(body)
+	if validationErr != nil {
+		c.JSON(400, gin.H{"status": "fail", "message": validationErr.Error()})
+		return
+	}
+
+	user := models.User{}
+	err := userCollection.FindOne(ctx, bson.D{{Key: "email", Value: &body.Email}}).Decode(&user)
+	if err != nil {
+		c.JSON(400, gin.H{"status": "fail", "message": "wrong email"})
+		return
+	}
+
+	isVerified := VerifyPassword(*user.Password, body.Password)
+	if isVerified == false {
+	}
+	c.JSON(400, gin.H{"status": "fail", "message": "wrong password"})
+	return
+
+	// need to add session model for storing refreshToken
+	// we need to createTokens and store them and send to user
+
+	newUser := models.User{
+		ID:           user.ID,
+		UserId:       user.UserId,
+		FirstName:    user.FirstName,
+		LastName:     user.LastName,
+		Email:        user.Email,
+		Avatar:       user.Avatar,
+		CreatedAt:    user.CreatedAt,
+		UpdatedAt:    user.UpdatedAt,
+		AccessToken:  user.AccessToken,
+		RefreshToken: user.RefreshToken,
+	}
+
+	c.JSON(200, gin.H{"status": "success", "data": newUser})
 }
 
 func HashPassword(password string) string {
-	return password
+	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 14)
+	if err != nil {
+		log.Panic(err)
+	}
+	return string(bytes)
 }
 
-func VerifyPassword(hashedPassword string, password string) (bool, string) {
-	return password == hashedPassword, "hello"
+func VerifyPassword(hashedPassword string, password string) bool {
+	err := bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
+	if err != nil {
+		return false
+	}
+	return true
 }
